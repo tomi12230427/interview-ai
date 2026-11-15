@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interview AI｜採用面接評価</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f5f9;color:#172238;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
+header{background:#142440;color:white;padding:22px 18px}
+header h1{font-size:23px;margin:0}
+header p{font-size:12px;color:#bdc9da}
+main{max-width:780px;margin:auto;padding:15px}
+section{background:white;border-radius:15px;padding:19px;margin-bottom:15px;box-shadow:0 2px 10px #15233b0a}
+h2{font-size:17px;margin:0 0 15px}
+label{display:block;font-size:13px;font-weight:600;margin:12px 0 5px}
+input,textarea,select{width:100%;border:1px solid #d4dce7;border-radius:8px;padding:11px;font:inherit;background:white;color:#172238}
+textarea{min-height:180px;resize:vertical}
+button{background:#2457b8;color:white;border:0;border-radius:9px;padding:13px;font-size:15px;font-weight:600;cursor:pointer}
+button.secondary{background:#e9eef7;color:#183456}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.score{border-bottom:1px solid #e9edf3;padding:12px 0}
+.score select{margin-top:6px}
+small{color:#67758a}
+.total{font-size:36px;font-weight:800;color:#2457b8}
+#report{line-height:1.8;white-space:pre-wrap}
+.notice{background:#fff4db;padding:12px;border-radius:8px;font-size:12px}
+@media print{
+header,.no-print,.actions{display:none!important}
+body{background:white}
+section{box-shadow:none}
+main{padding:0}
+}
+</style>
+</head>
+<body>
+<header>
+<h1>Interview AI</h1>
+<p>採用面接評価システム｜個人検証版</p>
+</header>
+<main>
+<section class="no-print">
+<h2>① 面接情報</h2>
+<label>候補者名（テスト用）</label>
+<input id="name" placeholder="例：テスト候補者A">
+<label>応募職種</label>
+<input id="job" placeholder="例：営業職">
+<label>面接日</label>
+<input id="date" type="date">
+<label>面接担当者</label>
+<input id="interviewer">
+</section>
+
+<section class="no-print">
+<h2>② Notta議事録の取込</h2>
+<p><small>文字起こしを貼り付けるか、TXTファイルを選択してください。</small></p>
+<textarea id="transcript" placeholder="ここにNottaの文字起こしを貼り付け"></textarea>
+<label>TXTファイルを選択</label>
+<input id="file" type="file" accept=".txt,text/plain">
+<p id="fileStatus"><small>ファイル未選択</small></p>
+</section>
+
+<section class="no-print">
+<h2>③ 面接評価</h2>
+<p><small>各項目を1〜5点で評価。根拠が不足する場合は「評価不能」を選択してください。</small></p>
+<div id="scores"></div>
+<p>総合評価</p>
+<div><span id="total" class="total">0</span> / 25点</div>
+<small>未評価項目がある場合は合計点を確定しません。</small>
+</section>
+
+<section class="no-print">
+<h2>④ 評価コメント</h2>
+<label>候補者の強み</label>
+<textarea id="strength" placeholder="発言に基づく強み"></textarea>
+<label>懸念点・リスク</label>
+<textarea id="risk" placeholder="確認できた懸念点"></textarea>
+<label>追加確認事項</label>
+<textarea id="questions" placeholder="次回面接で確認したいこと"></textarea>
+<label>採用判断</label>
+<select id="decision">
+<option>保留・未判断</option>
+<option>次回面接へ進める</option>
+<option>採用を推薦</option>
+<option>見送りを推薦</option>
+</select>
+<div class="actions">
+<button onclick="makeReport()">評価資料を作成</button>
+<button class="secondary" onclick="saveDraft()">下書き保存</button>
+<button class="secondary" onclick="loadDraft()">下書き復元</button>
+</div>
+</section>
+
+<section>
+<h2>⑤ 採用面接評価レポート</h2>
+<div id="report">「評価資料を作成」を押すと、ここにレポートが表示されます。</div>
+<div class="actions no-print">
+<button onclick="window.print()">印刷・PDF保存</button>
+</div>
+</section>
+<section class="no-print">
+<div class="notice">この初期版はAI自動採点に未対応です。評価は面接官が入力してください。データは外部サーバーへ送信しませんが、ブラウザ内の保存データは端末を共有する人から閲覧される可能性があります。実際の応募者情報は入力しないでください。</div>
+</section>
+</main>
+<script>
+const categories=[
+"実務能力・経験",
+"主体性・責任感",
+"コミュニケーション能力",
+"成長意欲",
+"価値観・組織適合性"
+];
+const $=id=>document.getElementById(id);
+const ids=["name","job","date","interviewer","transcript","strength","risk","questions","decision"];
+const scoreBox=$("scores");
+categories.forEach((c,i)=>{
+const div=document.createElement("div");
+div.className="score";
+const label=document.createElement("label");
+label.textContent=c;
+const select=document.createElement("select");
+select.id="s"+i;
+select.innerHTML='<option value="">評価不能</option>'+
+[1,2,3,4,5].map(n=>`<option value="${n}">${n}点</option>`).join("");
+select.onchange=updateTotal;
+const evidence=document.createElement("textarea");
+evidence.id="e"+i;
+evidence.placeholder="評価の根拠となる発言・行動";
+evidence.style.minHeight="70px";
+div.append(label,select,evidence);
+scoreBox.append(div);
+});
+function updateTotal(){
+const vals=categories.map((_,i)=>$("s"+i).value);
+$("total").textContent=vals.every(Boolean)?
+vals.reduce((a,b)=>a+Number(b),0):"未確定";
+}
+$("file").addEventListener("change",async e=>{
+const file=e.target.files[0];
+if(!file)return;
+if(!/\.txt$/i.test(file.name)){
+$("fileStatus").textContent="TXT形式を選択してください";
+return;
+}
+try{
+$("transcript").value=await file.text();
+$("fileStatus").textContent=file.name+" を取り込みました";
+}catch(err){
+$("fileStatus").textContent="読み込みに失敗しました";
+}
+});
+function getData(){
+const d={};
+ids.forEach(id=>d[id]=$(id).value);
+d.scores=categories.map((_,i)=>({
+name:categories[i],
+score:$("s"+i).value,
+evidence:$("e"+i).value
+}));
+return d;
+}
+function makeReport(){
+const d=getData();
+const complete=d.scores.every(x=>x.score);
+const total=d.scores.reduce((a,x)=>a+Number(x.score||0),0);
+const lines=[
+"【採用面接評価レポート】",
+"候補者："+(d.name||"未入力"),
+"職種："+(d.job||"未入力"),
+"面接日："+(d.date||"未入力"),
+"担当者："+(d.interviewer||"未入力"),
+"",
+"■ 評価結果",
+...d.scores.map(x=>x.name+"："+(x.score?x.score+" / 5点":"評価不能")+"\n根拠："+(x.evidence||"記載なし")),
+"",
+"合計："+(complete?total+" / 25点":"未確定"),
+"",
+"■ 強み\n"+(d.strength||"未入力"),
+"■ 懸念点\n"+(d.risk||"未入力"),
+"■ 追加確認事項\n"+(d.questions||"未入力"),
+"■ 面接官の判断\n"+d.decision,
+"",
+"※採点は面接官による評価です。AI自動評価ではありません。"
+];
+$("report").textContent=lines.join("\n");
+$("report").scrollIntoView({behavior:"smooth"});
+}
+function saveDraft(){
+try{
+localStorage.setItem("interview_draft",JSON.stringify(getData()));
+alert("このブラウザに下書きを保存しました");
+}catch(e){alert("保存できませんでした");}
+}
+function loadDraft(){
+try{
+const raw=localStorage.getItem("interview_draft");
+if(!raw){alert("保存済みデータがありません");return;}
+const d=JSON.parse(raw);
+ids.forEach(id=>$(id).value=d[id]||"");
+d.scores.forEach((x,i)=>{
+$("s"+i).value=x.score;
+$("e"+i).value=x.evidence;
+});
+updateTotal();
+alert("復元しました");
+}catch(e){alert("復元できませんでした");}
+}
+$("date").value=new Date().toLocaleDateString("sv-SE");
+updateTotal();
+</script>
+</body>
+</html>

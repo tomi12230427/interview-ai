@@ -1,212 +1,272 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Interview AI｜採用面接評価</title>
+<title>Interview AI | 面接評価</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#f3f5f9;color:#172238;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
-header{background:#142440;color:white;padding:22px 18px}
-header h1{font-size:23px;margin:0}
-header p{font-size:12px;color:#bdc9da}
-main{max-width:780px;margin:auto;padding:15px}
-section{background:white;border-radius:15px;padding:19px;margin-bottom:15px;box-shadow:0 2px 10px #15233b0a}
-h2{font-size:17px;margin:0 0 15px}
-label{display:block;font-size:13px;font-weight:600;margin:12px 0 5px}
-input,textarea,select{width:100%;border:1px solid #d4dce7;border-radius:8px;padding:11px;font:inherit;background:white;color:#172238}
-textarea{min-height:180px;resize:vertical}
-button{background:#2457b8;color:white;border:0;border-radius:9px;padding:13px;font-size:15px;font-weight:600;cursor:pointer}
-button.secondary{background:#e9eef7;color:#183456}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.score{border-bottom:1px solid #e9edf3;padding:12px 0}
-.score select{margin-top:6px}
-small{color:#67758a}
-.total{font-size:36px;font-weight:800;color:#2457b8}
-#report{line-height:1.8;white-space:pre-wrap}
-.notice{background:#fff4db;padding:12px;border-radius:8px;font-size:12px}
+body{margin:0;background:#f3f6fa;color:#172238;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
+header{background:#142440;color:white;padding:24px 18px}
+header h1{margin:0;font-size:24px}
+header p{margin:8px 0 0;color:#d5dfeb;font-size:13px}
+main{max-width:850px;margin:auto;padding:16px}
+section{background:white;border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 2px 12px #162b4510}
+h2{font-size:18px;margin:0 0 14px}
+label{display:block;font-weight:650;font-size:14px;margin:12px 0 5px}
+input,textarea{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:10px;font:inherit}
+textarea{min-height:130px}
+#transcript{min-height:230px}
+button{border:0;border-radius:9px;background:#2457b8;color:white;padding:12px 16px;font-size:15px;font-weight:700;margin:6px 6px 6px 0;cursor:pointer}
+button.secondary{background:#e8eef8;color:#183450}
+.hint{font-size:13px;color:#52647b;line-height:1.65}
+.warn{background:#fff5dc;border-radius:8px;padding:10px;font-size:13px;line-height:1.6}
+.score{border-top:1px solid #e2e8f0;padding:12px 0}
+.score strong{display:block}
+.score .num{font-size:20px;font-weight:800;color:#2457b8}
+.score p{white-space:pre-wrap;margin:6px 0;line-height:1.6}
+.total{font-size:30px;font-weight:800;color:#2457b8}
+.hidden{display:none}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.row{grid-template-columns:1fr}}
 @media print{
-header,.no-print,.actions{display:none!important}
+header,.no-print,#setup,#transcriptSection,#aiSection{display:none!important}
 body{background:white}
-section{box-shadow:none}
 main{padding:0}
+section{box-shadow:none;break-inside:avoid}
+#resultsSection{display:block!important}
 }
 </style>
 </head>
 <body>
 <header>
 <h1>Interview AI</h1>
-<p>採用面接評価システム｜個人検証版</p>
+<p>Notta議事録 → ChatGPT分析 → 25点評価レポート</p>
 </header>
 <main>
-<section class="no-print">
-<h2>① 面接情報</h2>
-<label>候補者名（テスト用）</label>
-<input id="name" placeholder="例：テスト候補者A">
-<label>応募職種</label>
-<input id="job" placeholder="例：営業職">
-<label>面接日</label>
+<section id="setup">
+<h2>① 候補者情報</h2>
+<div class="row">
+<div>
+<label for="candidate">候補者名・識別名</label>
+<input id="candidate" placeholder="例：候補者A（匿名推奨）">
+</div>
+<div>
+<label for="position">応募職種</label>
+<input id="position" placeholder="例：法人営業">
+</div>
+</div>
+<label for="date">面接日</label>
 <input id="date" type="date">
-<label>面接担当者</label>
-<input id="interviewer">
 </section>
 
-<section class="no-print">
-<h2>② Notta議事録の取込</h2>
-<p><small>文字起こしを貼り付けるか、TXTファイルを選択してください。</small></p>
-<textarea id="transcript" placeholder="ここにNottaの文字起こしを貼り付け"></textarea>
-<label>TXTファイルを選択</label>
-<input id="file" type="file" accept=".txt,text/plain">
-<p id="fileStatus"><small>ファイル未選択</small></p>
+<section id="transcriptSection">
+<h2>② Nottaの議事録</h2>
+<label for="transcript">議事録を貼り付け</label>
+<textarea id="transcript" placeholder="ここに面接の文字起こしを貼り付けてください"></textarea>
+<label for="txt">またはTXTファイルを読み込み</label>
+<input type="file" id="txt" accept=".txt,text/plain">
+<p class="hint">このWebページから議事録が自動送信されることはありません。ChatGPTへ貼り付ける際は個人情報を確認してください。</p>
 </section>
 
-<section class="no-print">
-<h2>③ 面接評価</h2>
-<p><small>各項目を1〜5点で評価。根拠が不足する場合は「評価不能」を選択してください。</small></p>
-<div id="scores"></div>
-<p>総合評価</p>
-<div><span id="total" class="total">0</span> / 25点</div>
-<small>未評価項目がある場合は合計点を確定しません。</small>
+<section id="aiSection">
+<h2>③ ChatGPTで評価</h2>
+<p class="hint">下のボタンで議事録と採点指示をまとめてコピーします。ChatGPTを開いて貼り付けて送信してください。AIの返答は次の欄に貼り付けます。</p>
+<button id="copyPrompt">AI評価依頼をコピー</button>
+<button id="openChat" class="secondary">ChatGPTを開く</button>
+<p id="copyStatus" class="hint" role="status"></p>
+<label for="aiResponse">ChatGPTの回答（JSON形式）を貼り付け</label>
+<textarea id="aiResponse" placeholder="ChatGPTの回答をここに貼り付けます"></textarea>
+<button id="importResult">AI評価結果を取り込む</button>
+<p id="importStatus" class="hint" role="status"></p>
+<div class="warn">この方式はChatGPTへのコピー＆ペーストが必要です。AIの採点は参考意見です。採用の可否は人が判断してください。</div>
 </section>
 
-<section class="no-print">
-<h2>④ 評価コメント</h2>
-<label>候補者の強み</label>
-<textarea id="strength" placeholder="発言に基づく強み"></textarea>
-<label>懸念点・リスク</label>
-<textarea id="risk" placeholder="確認できた懸念点"></textarea>
-<label>追加確認事項</label>
-<textarea id="questions" placeholder="次回面接で確認したいこと"></textarea>
-<label>採用判断</label>
-<select id="decision">
-<option>保留・未判断</option>
-<option>次回面接へ進める</option>
-<option>採用を推薦</option>
-<option>見送りを推薦</option>
-</select>
-<div class="actions">
-<button onclick="makeReport()">評価資料を作成</button>
-<button class="secondary" onclick="saveDraft()">下書き保存</button>
-<button class="secondary" onclick="loadDraft()">下書き復元</button>
+<section id="resultsSection" class="hidden">
+<h2>④ 評価レポート</h2>
+<p id="meta"></p>
+<div id="scoreList"></div>
+<p>合計：<span class="total" id="total"></span></p>
+<h3>強み</h3><p id="strengths"></p>
+<h3>懸念点</h3><p id="risks"></p>
+<h3>次回の確認質問</h3><p id="questions"></p>
+<h3>総評</h3><p id="summary"></p>
+<p class="hint">※ AIによる補助評価です。発言内容と照合し、人が最終確認してください。</p>
+<div class="no-print">
+<button id="print">印刷・PDF保存</button>
+<button id="copyReport" class="secondary">レポートをコピー</button>
 </div>
-</section>
-
-<section>
-<h2>⑤ 採用面接評価レポート</h2>
-<div id="report">「評価資料を作成」を押すと、ここにレポートが表示されます。</div>
-<div class="actions no-print">
-<button onclick="window.print()">印刷・PDF保存</button>
-</div>
-</section>
-<section class="no-print">
-<div class="notice">この初期版はAI自動採点に未対応です。評価は面接官が入力してください。データは外部サーバーへ送信しませんが、ブラウザ内の保存データは端末を共有する人から閲覧される可能性があります。実際の応募者情報は入力しないでください。</div>
 </section>
 </main>
+
 <script>
-const categories=[
-"実務能力・経験",
-"主体性・責任感",
-"コミュニケーション能力",
-"成長意欲",
-"価値観・組織適合性"
+const names=[
+'実務能力・経験',
+'主体性・責任感',
+'コミュニケーション能力',
+'成長意欲',
+'価値観・組織適合性'
 ];
 const $=id=>document.getElementById(id);
-const ids=["name","job","date","interviewer","transcript","strength","risk","questions","decision"];
-const scoreBox=$("scores");
-categories.forEach((c,i)=>{
-const div=document.createElement("div");
-div.className="score";
-const label=document.createElement("label");
-label.textContent=c;
-const select=document.createElement("select");
-select.id="s"+i;
-select.innerHTML='<option value="">評価不能</option>'+
-[1,2,3,4,5].map(n=>`<option value="${n}">${n}点</option>`).join("");
-select.onchange=updateTotal;
-const evidence=document.createElement("textarea");
-evidence.id="e"+i;
-evidence.placeholder="評価の根拠となる発言・行動";
-evidence.style.minHeight="70px";
-div.append(label,select,evidence);
-scoreBox.append(div);
+let latest=null;
+
+$('date').value=new Date().toLocaleDateString('sv-SE');
+
+$('txt').addEventListener('change',async e=>{
+const f=e.target.files[0];
+if(f)$('transcript').value=await f.text();
 });
-function updateTotal(){
-const vals=categories.map((_,i)=>$("s"+i).value);
-$("total").textContent=vals.every(Boolean)?
-vals.reduce((a,b)=>a+Number(b),0):"未確定";
+
+function promptText(){
+const transcript=$('transcript').value.trim();
+if(!transcript)throw Error('先に議事録を入力してください。');
+
+return `あなたは採用面接の評価補助担当です。
+以下の面接議事録のみを根拠に、職務に関連する発言を分析してください。
+発言していない事実を推測しないでください。
+年齢、性別、国籍、出身地、家族状況、健康状態などの個人属性を評価しないでください。
+候補者の能力や適性を断定せず、根拠のある暫定評価としてください。
+
+応募職種：${$('position').value||'未入力'}
+
+評価項目（この順番で必ず5つ）：
+1. 実務能力・経験
+2. 主体性・責任感
+3. コミュニケーション能力
+4. 成長意欲
+5. 価値観・組織適合性（職務上の協働・働き方に関する具体的発言のみ）
+
+各項目は1〜5の整数点。
+判断材料が不足している項目は score を null とし、理由に「評価不能」と書いてください。
+推測で埋めないでください。
+
+返答は説明文やMarkdownのコードフェンスを付けず、次のJSONオブジェクトだけを出力してください。
+
+{
+"scores":[
+{"name":"実務能力・経験","score":null,"reason":"根拠に基づく説明","evidence":"議事録中の短い発言"},
+{"name":"主体性・責任感","score":null,"reason":"","evidence":""},
+{"name":"コミュニケーション能力","score":null,"reason":"","evidence":""},
+{"name":"成長意欲","score":null,"reason":"","evidence":""},
+{"name":"価値観・組織適合性","score":null,"reason":"","evidence":""}
+],
+"strengths":"強み",
+"risks":"懸念点・判断材料の不足",
+"questions":"次回面接での確認質問",
+"summary":"総評。採否を断定しない"
 }
-$("file").addEventListener("change",async e=>{
-const file=e.target.files[0];
-if(!file)return;
-if(!/\.txt$/i.test(file.name)){
-$("fileStatus").textContent="TXT形式を選択してください";
-return;
+
+【議事録】
+${transcript}`;
 }
+
+$('copyPrompt').onclick=async()=>{
 try{
-$("transcript").value=await file.text();
-$("fileStatus").textContent=file.name+" を取り込みました";
-}catch(err){
-$("fileStatus").textContent="読み込みに失敗しました";
+const s=promptText();
+await navigator.clipboard.writeText(s);
+$('copyStatus').textContent='コピーしました。ChatGPTを開いて貼り付けてください。';
+}catch(e){
+$('copyStatus').textContent='コピーできませんでした：'+e.message;
 }
+};
+
+$('openChat').onclick=()=>{
+window.open('https://chatgpt.com/','_blank','noopener');
+};
+
+function parseJSON(s){
+s=s.trim();
+const match=s.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+if(match)s=match[1];
+return JSON.parse(s);
+}
+
+$('importResult').onclick=()=>{
+try{
+const data=parseJSON($('aiResponse').value);
+
+if(!Array.isArray(data.scores)||data.scores.length!==5)
+throw Error('scoresは5項目必要です。');
+
+for(let i=0;i<5;i++){
+const x=data.scores[i];
+if(!x||x.name!==names[i])
+throw Error((i+1)+'項目目の名称が一致しません。');
+if(x.score!==null&&(!Number.isInteger(x.score)||x.score<1||x.score>5))
+throw Error(names[i]+'の点数が不正です。');
+if(typeof x.reason!=='string'||typeof x.evidence!=='string')
+throw Error('評価理由・根拠が不足しています。');
+}
+
+for(const key of ['strengths','risks','questions','summary']){
+if(typeof data[key]!=='string')
+throw Error(key+'が不足しています。');
+}
+
+latest=data;
+render(data);
+$('importStatus').textContent='評価結果を反映しました。';
+$('resultsSection').scrollIntoView({behavior:'smooth'});
+
+}catch(e){
+$('importStatus').textContent='取り込み失敗：'+e.message+
+' ChatGPTに「指定したJSON形式で再出力して」と依頼してください。';
+}
+};
+
+function render(d){
+$('resultsSection').classList.remove('hidden');
+
+$('meta').textContent=
+`候補者：${$('candidate').value||'未入力'} ／ 職種：${$('position').value||'未入力'} ／ 面接日：${$('date').value||'未入力'}`;
+
+const list=$('scoreList');
+list.replaceChildren();
+let total=0,count=0;
+
+d.scores.forEach(x=>{
+const box=document.createElement('div');
+box.className='score';
+
+const title=document.createElement('strong');
+title.textContent=x.name;
+
+const num=document.createElement('div');
+num.className='num';
+num.textContent=x.score===null?'評価不能':x.score+' / 5点';
+
+const reason=document.createElement('p');
+reason.textContent='評価理由：'+x.reason;
+
+const evidence=document.createElement('p');
+evidence.textContent='根拠発言：'+x.evidence;
+
+box.append(title,num,reason,evidence);
+list.append(box);
+
+if(x.score!==null){total+=x.score;count++;}
 });
-function getData(){
-const d={};
-ids.forEach(id=>d[id]=$(id).value);
-d.scores=categories.map((_,i)=>({
-name:categories[i],
-score:$("s"+i).value,
-evidence:$("e"+i).value
-}));
-return d;
+
+$('total').textContent=
+total+' / '+(count*5)+'点（評価済み'+count+'/5項目）';
+
+for(const key of ['strengths','risks','questions','summary']){
+$(key).textContent=d[key];
 }
-function makeReport(){
-const d=getData();
-const complete=d.scores.every(x=>x.score);
-const total=d.scores.reduce((a,x)=>a+Number(x.score||0),0);
-const lines=[
-"【採用面接評価レポート】",
-"候補者："+(d.name||"未入力"),
-"職種："+(d.job||"未入力"),
-"面接日："+(d.date||"未入力"),
-"担当者："+(d.interviewer||"未入力"),
-"",
-"■ 評価結果",
-...d.scores.map(x=>x.name+"："+(x.score?x.score+" / 5点":"評価不能")+"\n根拠："+(x.evidence||"記載なし")),
-"",
-"合計："+(complete?total+" / 25点":"未確定"),
-"",
-"■ 強み\n"+(d.strength||"未入力"),
-"■ 懸念点\n"+(d.risk||"未入力"),
-"■ 追加確認事項\n"+(d.questions||"未入力"),
-"■ 面接官の判断\n"+d.decision,
-"",
-"※採点は面接官による評価です。AI自動評価ではありません。"
-];
-$("report").textContent=lines.join("\n");
-$("report").scrollIntoView({behavior:"smooth"});
 }
-function saveDraft(){
+
+$('print').onclick=()=>window.print();
+
+$('copyReport').onclick=async()=>{
+if(!latest)return;
+const t=$('resultsSection').innerText;
 try{
-localStorage.setItem("interview_draft",JSON.stringify(getData()));
-alert("このブラウザに下書きを保存しました");
-}catch(e){alert("保存できませんでした");}
+await navigator.clipboard.writeText(t);
+alert('コピーしました');
+}catch(e){
+alert('コピーできませんでした');
 }
-function loadDraft(){
-try{
-const raw=localStorage.getItem("interview_draft");
-if(!raw){alert("保存済みデータがありません");return;}
-const d=JSON.parse(raw);
-ids.forEach(id=>$(id).value=d[id]||"");
-d.scores.forEach((x,i)=>{
-$("s"+i).value=x.score;
-$("e"+i).value=x.evidence;
-});
-updateTotal();
-alert("復元しました");
-}catch(e){alert("復元できませんでした");}
-}
-$("date").value=new Date().toLocaleDateString("sv-SE");
-updateTotal();
+};
 </script>
 </body>
 </html>
